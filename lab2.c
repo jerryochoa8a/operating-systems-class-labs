@@ -42,7 +42,7 @@ void PRINT_SCHEDULING_TABLE() {
         // if process has been scheduled ("done" field is 1, print other
         // contents (start time, end time, turnaround time)
         if(table[i].done==1){
-            printf("%d      %d                %d",
+            printf("       %d        %d       %d",
             table[i].start_time, table[i].end_time, table[i].turnaround_time);
         }
         printf("\n");
@@ -85,7 +85,8 @@ void option1() {
 //*************************************************************
 void option2() {
     // declare (and initilize when appropriate) local variables
-    int sceduled_processes;
+    int sceduled_processes = 0;
+    int current = 0;
 
     // for each process, reset "done" field to 0
     for(int i=0; i < total_number_processes; i++){
@@ -96,22 +97,39 @@ void option2() {
     while(sceduled_processes < total_number_processes){
         // initilize the earliest arrival time to INT_MAX (largest integer
         // value)
+        int early_arrival = INT_MAX;
+        int earlyIndex;
         
         // for each process not yet scheduled
-        
-        // check if process has earlier arrival time than current
-        // earliest and update
+        for(int i=0; i< total_number_processes; i++){   
+            // check if process has earlier arrival time than current
+            // earliest and update
+            if (table[i].done == 0 && table[i].arrival_cycle < early_arrival){
+                early_arrival = table[i].arrival_cycle;
+                earlyIndex = i;
+            }
+        }
         
         // set start time, end time, turnaround time, done fields for
         // unscheduled process with earliest arrival time
         //endtime = start +total
         //turnaround = end - arrival
+        if (current < table[earlyIndex].arrival_cycle){
+            current = table[earlyIndex].arrival_cycle; 
+        }
+        table[earlyIndex].start_time = current;
         
         // update current cycle time and increment number of processes
         // scheduled
-    }
+        table[earlyIndex].end_time = table[earlyIndex].start_time + table[earlyIndex].total_cycles;
+        table[earlyIndex].turnaround_time = table[earlyIndex].end_time - table[earlyIndex].arrival_cycle;
+        table[earlyIndex].done = 1;
 
+        current = table[earlyIndex].end_time;
+        sceduled_processes++;
+    }
     // print contents of table
+    PRINT_SCHEDULING_TABLE();
 
     // return;
 }
