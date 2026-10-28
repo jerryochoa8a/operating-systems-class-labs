@@ -8,19 +8,21 @@
 
 typedef struct SchedTable
 {
-    int process_id;
-    int arrival_cycle;
-    int total_cycles;
+    int id;
+    int arrival;
+    int total_cpu;
+    int total_remaining;
+    int done;
     int start_time;
+    int already_started;
     int end_time;
     int turnaround_time;
-    int done;
 }SchedTable;
 
 #define MAX_PROCESSES 10
 
-SchedTable table[MAX_PROCESSES];
-int total_number_processes;
+SchedTable *table = NULL;
+int total_number_processes = 0;
 
 
 //***************************************************************
@@ -37,7 +39,7 @@ void PRINT_SCHEDULING_TABLE() {
         // of the table's index
         // printf("1      0            6\n");
         printf("%d      %d          %d",
-        table[i].process_id, table[i].arrival_cycle, table[i].total_cycles);
+        table[i].id, table[i].arrival, table[i].total_cpu);
     
         // if process has been scheduled ("done" field is 1, print other
         // contents (start time, end time, turnaround time)
@@ -61,17 +63,18 @@ void option1() {
     scanf("%d", &total_number_processes);
 
     // allocate memory for table to hold process parameters
+    table = malloc(total_number_processes * sizeof(SchedTable));
 
     // for each process
     for(int i=0; i < total_number_processes; i++){   
         // prompt for arrival time, and total cycle time
-        table[i].process_id = i+1;
+        table[i].id = i+1;
 
         printf("Enter arrival cycle for process %d:\n", i+1);
-        scanf("%d", &table[i].arrival_cycle);
+        scanf("%d", &table[i].arrival);
         
         printf("Enter total cycles for process %d:\n", i+1);
-        scanf("%d", &table[i].total_cycles);
+        scanf("%d", &table[i].total_cpu);
     
     }
 
@@ -104,8 +107,8 @@ void option2() {
         for(int i=0; i< total_number_processes; i++){   
             // check if process has earlier arrival time than current
             // earliest and update
-            if (table[i].done == 0 && table[i].arrival_cycle < early_arrival){
-                early_arrival = table[i].arrival_cycle;
+            if (table[i].done == 0 && table[i].arrival < early_arrival){
+                early_arrival = table[i].arrival;
                 earlyIndex = i;
             }
         }
@@ -114,15 +117,15 @@ void option2() {
         // unscheduled process with earliest arrival time
         //endtime = start +total
         //turnaround = end - arrival
-        if (current < table[earlyIndex].arrival_cycle){
-            current = table[earlyIndex].arrival_cycle; 
+        if (current < table[earlyIndex].arrival){
+            current = table[earlyIndex].arrival; 
         }
         table[earlyIndex].start_time = current;
         
         // update current cycle time and increment number of processes
         // scheduled
-        table[earlyIndex].end_time = table[earlyIndex].start_time + table[earlyIndex].total_cycles;
-        table[earlyIndex].turnaround_time = table[earlyIndex].end_time - table[earlyIndex].arrival_cycle;
+        table[earlyIndex].end_time = table[earlyIndex].start_time + table[earlyIndex].total_cpu;
+        table[earlyIndex].turnaround_time = table[earlyIndex].end_time - table[earlyIndex].arrival;
         table[earlyIndex].done = 1;
 
         current = table[earlyIndex].end_time;
@@ -139,6 +142,9 @@ void option3() {
     // declare (and initilize when appropriate) local variables
 
     // for each process, reset "done" field to 0
+    for(int i=0; i<total_number_processes;i++){
+        table[i].done = 0;
+    }
 
     // while there are still processes to schedule
 
@@ -164,37 +170,72 @@ void option3() {
 //*************************************************************
 void option4() {
     // declare (and initilize when appropriate) local variables
+    int sceduled_processes = 0;
+    int current = 0;
 
     // for each process, reset "done", "total_remaining" and
     // "already_started" fields to 0
+    for(int i=0;i< total_number_processes; i++){
+        table[i].done = 0;
+        table[i].total_remaining = table[i].total_cpu;
+        table[i].already_started = 0;
+    }
 
     // while there are still processes to schedule
+    while(sceduled_processes < total_number_processes){   
+        // initilize the lowest total remaining time to INT_MAX (largest
+        // integer value)
+        int lowest_total_remaining = INT_MAX;
+        int lowIndex = -1;
+        
+        // for each process not yet scheduled
+        for(int i=0;i<total_number_processes;i++){            
+            // check if process has lower total remaining time than current
+            // lowest and has arrival time less than current cycle time and update
+            if(table[i].done == 0 &&
+               table[i].arrival <= current &&
+               table[i].total_remaining < lowest_total_remaining){
+                lowest_total_remaining = table[i].total_remaining;
+                lowIndex=i;
+            }
+        }
 
-    // initilize the lowest total remaining time to INT_MAX (largest
-    // integer value)
+        if(lowIndex == -1){
+            current++;
+            continue;
+        }
+            
+        // check if process already partially-scheduled
+        if(table[lowIndex].already_started == 0){
+            // if so, set "start time", "already_started" fields of process
+            // with lowest (and available) total remaining cycle time
+            table[lowIndex].start_time = current;
+            table[lowIndex].already_started = 1;
+        }
+            
+        // set end time, turnaround time of process with lowest (and available)
+        // total remaining cycle time
+                    
+        // decrement total remaining time of process with lowest (and
+        // available) total remaining cycle time
+        table[lowIndex].total_remaining--;
+        current++;
+            
+        // if remaining time is 0, set done field to 1, increment cycle time
+        // and number of scheduled processes
+        if(table[lowIndex].total_remaining == 0){
+            table[lowIndex].end_time = current;
+            table[lowIndex].turnaround_time =
+                table[lowIndex].end_time - table[lowIndex].arrival;
+            table[lowIndex].done = 1;
+            sceduled_processes++;
+        }
 
-    // for each process not yet scheduled
-
-    // check if process has lower total remaining time than current
-    // lowest and has arrival time less than current cycle time and update
-
-    // check if process already partially-scheduled
-
-    // if so, set "start time", "already_started" fields of process
-    // with lowest (and available) total remaining cycle time
-
-    // set end time, turnaround time of process with lowest (and available)
-    // total remaining cycle time
-
-    // decrement total remaining time of process with lowest (and
-    // available) total remaining cycle time
-
-    // if remaining time is 0, set done field to 1, increment cycle time
-    // and number of scheduled processes
+    }
 
     // print contents of table
-
-    // return;
+    PRINT_SCHEDULING_TABLE();
+    return;
 }
 
 //*************************************************************
