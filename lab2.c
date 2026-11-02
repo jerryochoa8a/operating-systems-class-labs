@@ -140,6 +140,8 @@ void option2() {
 //*************************************************************
 void option3() {
     // declare (and initilize when appropriate) local variables
+    int sceduled_processes = 0;
+    int current = 0;
 
     // for each process, reset "done" field to 0
     for(int i=0; i<total_number_processes;i++){
@@ -147,24 +149,51 @@ void option3() {
     }
 
     // while there are still processes to schedule
+    while(sceduled_processes < total_number_processes){
 
-    // initilize the lowest total cycle time to INT_MAX (largest integer
-    // value)
+        // initilize the lowest total cycle time to INT_MAX (largest integer
+        // value)
+        int lowest_total_cpu = INT_MAX;
+        int lowIndex = -1;
 
-    // for each process not yet scheduled
+        // for each process not yet scheduled
+        for(int i=0; i<total_number_processes;i++){
 
-    // check if process has lower total cycle time than current
-    // lowest and has arrival time less than current cycle time and update
+            // check if process has lower total cycle time than current
+            // lowest and has arrival time less than current cycle time and update
+            if(table[i].done == 0 &&
+               table[i].arrival <= current &&
+               table[i].total_cpu < lowest_total_cpu){
+                lowest_total_cpu = table[i].total_cpu;
+                lowIndex = i;
+            }
+        }
 
-    // set start time, end time, turnaround time, done fields for
-    // unscheduled process with lowest (and available) total cycle time
+        if(lowIndex == -1){
+            current++;
+            continue;
+        }
 
-    // update current cycle time and increment number of processes
-    // scheduled
+        // set start time, end time, turnaround time, done fields for
+        // unscheduled process with lowest (and available) total cycle time
+        table[lowIndex].start_time = current;
+        table[lowIndex].end_time =
+            table[lowIndex].start_time + table[lowIndex].total_cpu;
+        table[lowIndex].turnaround_time =
+            table[lowIndex].end_time - table[lowIndex].arrival;
+        table[lowIndex].done = 1;
+
+        // update current cycle time and increment number of processes
+        // scheduled
+        current = table[lowIndex].end_time;
+        sceduled_processes++;
+    }
 
     // print contents of table
+    PRINT_SCHEDULING_TABLE();
 
     // return;
+    return;
 }
 
 //*************************************************************
@@ -242,8 +271,12 @@ void option4() {
 void option5() {
     printf("Quitting program");
     // free the schedule table if not NULL
+    if(table !=NULL){
+        free(table);
+        table = NULL;
+    }
 
-    // return;
+    return;
 }
 
 /* ************************************************************* */
